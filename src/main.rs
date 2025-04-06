@@ -5,6 +5,7 @@ use boring::hash::hash;
 use boring::hash::Hasher;
 use boring::hash::MessageDigest;
 use std::cell::RefCell;
+use std::fmt::Debug;
 use std::hash::Hash;
 
 fn main() {
@@ -32,7 +33,6 @@ impl Node {
     }
 }
 
-#[derive(Debug)]
 struct Tree {
     root: Node,
     data_len: usize,
@@ -62,8 +62,31 @@ impl Tree {
         self.depth
     }
 
-    pub fn contains(&self, data: String) -> bool {
-        todo!()
+    // The position of the original data
+    pub fn contains(&self, data: String, pos: usize) -> Result<bool, ()> {
+        if pos + 1 > self.data_len {
+            return Err(());
+        }
+
+        // data should be one of the leaf nodes. calculate the hash to compare
+        let data_hash = hash(MessageDigest::sha256(), data.as_bytes()).unwrap();
+        let data_hash = data_hash.as_ref();
+
+        let root = self.root();
+        if &root.hash == data_hash {
+            return Ok(true);
+        }
+
+        // based on the position we need to traverse the tree down to the leaf node
+        while root.left.borrow().is_some() || root.right.borrow().is_some() {
+            // TODO
+            // data_len / 2
+            // if in lower half then traverse left, else right
+
+            // compare the hash and return true if eq
+        }
+
+        Ok(false)
     }
 
     // Must be called with data of non-zero length
