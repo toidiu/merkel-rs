@@ -75,35 +75,61 @@ impl Tree {
         let data_hash = data_hash.as_ref();
 
         let mut cmp_node = Box::new(self.root().clone());
-        if self.elem_cnt == 1 && &cmp_node.hash == data_hash {
-            return Ok(true);
+
+        // make assertions about a single node tree
+        if self.elem_cnt == 1 {
+            let left_none = cmp_node.left.borrow().is_none();
+            let right_none = cmp_node.right.borrow().is_none();
+            assert!(left_none && right_none);
+
+            if &cmp_node.hash == data_hash {
+                return Ok(true);
+            }
         }
 
         let mut left = 0;
-        let mut right = self.elem_cnt - 1;
+        // since we build the merkel tree with even nodes (duplicating the last element), make
+        // the search space even to make calculating easier
+        let mut right = if self.elem_cnt % 2 == 0 {
+            self.elem_cnt - 1
+        } else {
+            self.elem_cnt
+        };
 
         // based on the position we need to traverse the tree down to the leaf node.
         // continue until we are at the leaf nodes
         while cmp_node.left.borrow().is_some() || cmp_node.right.borrow().is_some() {
+            // the tree has even balanced nodes
+            assert!(cmp_node.left.borrow().is_some() && cmp_node.right.borrow().is_some());
+
             let search_space = right - left;
             if search_space == 0 {
-                // we are done. compare and return
-                unreachable!("loop should exit");
+                unreachable!(
+                    "leaf nodes have None branches and we should not have entered this loop"
+                );
             }
 
-            let mid_idx = search_space / 2;
+            let mid_idx = left + (search_space / 2);
+            println!("----------- pos:{pos}  {left} -{mid_idx}- {right}");
+
             if pos <= mid_idx {
+                println!("<-- left");
                 // search left
                 cmp_node = cmp_node.left.clone().borrow().clone().unwrap();
                 right = mid_idx;
             } else {
+                println!("--> right");
                 // search right
                 cmp_node = cmp_node.right.clone().borrow().clone().unwrap();
-                left = mid_idx;
+                left = mid_idx + 1;
             }
         }
 
-        assert_eq!(left, right);
+        println!("----------- pos:{pos}  {left}-{right}");
+        if self.elem_cnt > 1 {
+            assert_eq!(left, right);
+        }
+
         if &cmp_node.hash == data_hash {
             Ok(true)
         } else {
@@ -219,19 +245,23 @@ mod test {
 
         let check_data = "2";
         let hash = Tree::hash_data(check_data.as_bytes());
-        assert!(tree.contains(check_data, 0).unwrap());
+        assert!(tree.contains(check_data, 1).unwrap());
 
         let check_data = "3";
         let hash = Tree::hash_data(check_data.as_bytes());
-        assert!(tree.contains(check_data, 0).unwrap());
+        assert!(tree.contains(check_data, 2).unwrap());
 
         let check_data = "4";
         let hash = Tree::hash_data(check_data.as_bytes());
-        assert!(tree.contains(check_data, 0).unwrap());
+        assert!(tree.contains(check_data, 3).unwrap());
 
         let check_data = "5";
         let hash = Tree::hash_data(check_data.as_bytes());
         assert!(!tree.contains(check_data, 0).unwrap());
+
+        // pos is out of bounds
+        let check_data = "5";
+        assert!(tree.contains(check_data, 5).is_err());
     }
 
     #[test]
@@ -245,11 +275,11 @@ mod test {
 
         let check_data = "2";
         let hash = Tree::hash_data(check_data.as_bytes());
-        assert!(tree.contains(check_data, 0).unwrap());
+        assert!(tree.contains(check_data, 1).unwrap());
 
         let check_data = "3";
         let hash = Tree::hash_data(check_data.as_bytes());
-        assert!(tree.contains(check_data, 0).unwrap());
+        assert!(tree.contains(check_data, 2).unwrap());
 
         let check_data = "4";
         let hash = Tree::hash_data(check_data.as_bytes());
