@@ -64,7 +64,7 @@ impl Tree {
     }
 
     // The position of the original data
-    pub fn contains(&self, data: String, pos: usize) -> Result<bool, ()> {
+    pub fn contains(&self, data: &str, pos: usize) -> Result<bool, ()> {
         if pos + 1 > self.elem_cnt {
             return Err(());
         }
@@ -75,7 +75,7 @@ impl Tree {
         let data_hash = data_hash.as_ref();
 
         let mut cmp_node = Box::new(self.root().clone());
-        if &cmp_node.hash == data_hash {
+        if self.elem_cnt == 1 && &cmp_node.hash == data_hash {
             return Ok(true);
         }
 
@@ -95,9 +95,11 @@ impl Tree {
             if pos <= mid_idx {
                 // search left
                 cmp_node = cmp_node.left.clone().borrow().clone().unwrap();
+                right = mid_idx;
             } else {
                 // search right
                 cmp_node = cmp_node.right.clone().borrow().clone().unwrap();
+                left = mid_idx;
             }
         }
 
@@ -204,5 +206,67 @@ mod test {
         let tree2 = Tree::new_with_data(&data);
 
         assert_eq!(tree1.root().hash(), tree2.root().hash());
+    }
+
+    #[test]
+    fn contains_in_even_tree() {
+        let data = ["1", "2", "3", "4"];
+        let tree = Tree::new_with_data(&data);
+
+        let check_data = "1";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "2";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "3";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "4";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "5";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(!tree.contains(check_data, 0).unwrap());
+    }
+
+    #[test]
+    fn contains_in_odd_tree() {
+        let data = ["1", "2", "3"];
+        let tree = Tree::new_with_data(&data);
+
+        let check_data = "1";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "2";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "3";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "4";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(!tree.contains(check_data, 0).unwrap());
+    }
+
+    #[test]
+    fn contains_in_single_node_tree() {
+        let data = ["1"];
+        let tree = Tree::new_with_data(&data);
+
+        let check_data = "1";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(tree.contains(check_data, 0).unwrap());
+
+        let check_data = "2";
+        let hash = Tree::hash_data(check_data.as_bytes());
+        assert!(!tree.contains(check_data, 0).unwrap());
     }
 }
